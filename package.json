@@ -4,12 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "migrate-up": "db-migrate up -e env",
+    "migrate-down": "db-migrate down -e env",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@elastic/elasticsearch": "^8.12.2",
     "axios": "^1.6.8",
     "body-parser": "^1.20.2",
     "cheerio": "^1.0.0-rc.12",

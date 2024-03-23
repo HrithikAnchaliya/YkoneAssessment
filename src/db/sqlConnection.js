@@ -1,6 +1,7 @@
 // db.js
 
 const mysql = require('mysql2');
+const  { createIndexInElasticsearch } = require("../controllers/elasticController");
 require('dotenv').config(); // Load environment variables from .env file if used
 
 const connection = mysql.createConnection({
@@ -16,6 +17,11 @@ connection.connect((err) => {
     return;
   }
   console.log('Connected to MySQL database');
+
+  createIndexInElasticsearch().then( () => {
+        console.log("Elasticsearch Connected Successfully");
+  });
+
 });
 
 module.exports = connection;

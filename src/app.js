@@ -1,17 +1,18 @@
-var express = require('express');
-var bodyParser = require("body-parser");
-var app = express();
-// var insertData = require('./services/crawler')
+const express = require('express');
+const app = express();
+const clients = require("./routes/clients");
+const crawler = require("./routes/crawler");
+const elastic = require('./routes/indexer')
 
-app.use(bodyParser.urlencoded({ extended: false }));
-
+app.use(express.json())
+app.use('/clients', clients);
+app.use('/crawler', crawler);
+app.use('/elastic', elastic);
 
 app.get('/', (req, res, next) => {
-    console.log("Hello");
-    res.send({message: "Hello"});
+    res.send({message: "Hello, YKone"});
 })
 
 app.listen(5000, () => {
     console.log("Web App");
-    // insertData();
 })

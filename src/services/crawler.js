@@ -1,6 +1,7 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
-const injestion = require('./injestion')
+const {createNewClient} = require("../models/clientModel");
+const { indexDataInElasticSearch } = require("../controllers/elasticController")
 
 /*
     Crawler for the website
@@ -30,12 +31,13 @@ async function crawlClientData(title, delayBetweenRequests) {
         const html = await delayedRequest(url, delayBetweenRequests); // Initial request without delay
         if (!html) return null; // Exit if request failed
 
+
         // Load HTML content into Cheerio
         const $ = cheerio.load(html);
 
         let clientDetails = {};
 
-        clientDetails.title = $('h1.text-primary').text();
+        clientDetails.name = $('h1.text-primary').text();
         clientDetails.description = "";
 
         $('div.DESC').children().each((index, element) => {
@@ -46,24 +48,30 @@ async function crawlClientData(title, delayBetweenRequests) {
         $('h6.text-left').each((index, element) => {
             clientIntricates.push($(element).text());
         });
+        // console.log("HTML PAGE", clientIntricates);
 
-        clientDetails.activity = clientIntricates[1];
+        if( clientIntricates[2].length!==21 || clientIntricates[14].replace(/\t/g, '').length!==6){
+            return null;
+        }
+
         clientDetails.cin = clientIntricates[2];
-        clientDetails.date =  new Date(clientIntricates[3]);
+        clientDetails.pincode = clientIntricates[14].replace(/\t/g, '');
+        clientDetails.activity = clientIntricates[1];
+        clientDetails.registration_date =  new Date(clientIntricates[3]);
         clientDetails.category = clientIntricates[4];
-        clientDetails.subCategory = clientIntricates[5].replace(/\t/g, '');
+        clientDetails.sub_category = clientIntricates[5].replace(/\t/g, '');
         clientDetails.class = clientIntricates[6];
         clientDetails.roc = clientIntricates[7];
         clientDetails.status = clientIntricates[8].replace(/\t/g, '');
         clientDetails.auth_capital = clientIntricates[9];
         clientDetails.paid_capital = clientIntricates[10].replace(/\t/g, '');
         clientDetails.state = clientIntricates[13];
-        clientDetails.pin = clientIntricates[14].replace(/\t/g, '');
         clientDetails.address = clientIntricates[16];
         clientDetails.email = clientIntricates[17];
 
-        return clientDetails;
+        console.log("HTML PAGE", clientDetails);
 
+        return clientDetails;
     } catch (error) {
         console.error('Error:', error.message);
     }
@@ -94,28 +102,22 @@ async function crawlWebsite(url, delayBetweenRequests) {
         // Extract company data
         for(let i = 0; i < urlTitles.length; i++){
             let client = await crawlClientData(urlTitles[i], delayBetweenRequests);
-            // console.log("Per Client", client);
             if (client) {
-                injestion(client);
+                createNewClient(client, (err, result)=>{
+                    if(err){
+                        console.error("ERROR while inserting client data");
+                    }
+                    if(result){
+                        console.log("Inserted ID From MYSQL", result)
+                        indexDataInElasticSearch(result, client)
+                    }
+                });
             }
         }
-
-        // await injestion(clients);
-
-        //  return clients;
 
     } catch (error) {
         console.error('Error:', error.message);
     }
 }
 
-// Specify the URL of the website to crawl
-const websiteUrl = 'https://www.companydetails.in/latest-registered-company-mca';
-
-// Rate limit: Delay between consecutive requests (in milliseconds)
-const delayBetweenRequests = 500; // Example: 7 seconds
-
-crawlWebsite(websiteUrl, delayBetweenRequests);
-
-// Start crawling the website
-module.exports = crawlWebsite;
+module.exports = { crawlWebsite };
