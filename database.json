@@ -1,0 +1,12 @@
+
+{
+    "env": {
+      "driver": "mysql",
+      "user": {"ENV": "MYSQL_USER"},
+      "password": {"ENV": "MYSQL_PASSWORD"},
+      "database": {"ENV":"MYSQL_DATABASE"},
+      "multipleStatements": true,
+      "host": {"ENV": "MYSQL_HOST"}
+    }
+}
+
